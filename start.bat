@@ -18,7 +18,7 @@ if %errorlevel% neq 0 (
 :: Run the Hermes script
 echo Starting Hermes...
 echo.
-python hermes.py
+python main.py
 echo.
 echo Hermes has closed.
 pause
