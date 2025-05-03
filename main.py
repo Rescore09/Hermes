@@ -34,7 +34,6 @@ class Proxy:
 
     @property
     def proxy_dict(self) -> Dict[str, str]:
-        """Return proxy in requests format"""
         if self.username and self.password:
             return {
                 "http": f"http://{self.username}:{self.password}@{self.ip}:{self.port}",
@@ -64,7 +63,6 @@ class UserAccount:
         return f"@{self.username}"
 
     def format_details(self) -> str:
-        """Format user details for display"""
         verified_badge = f"{Fore.CYAN}[✓]{Style.RESET_ALL} " if self.verified else ""
         return (
             f"\n  {Fore.GREEN}Username:{Style.RESET_ALL} @{self.username} {verified_badge}\n"
@@ -76,7 +74,6 @@ class UserAccount:
 
     @staticmethod
     def format_number(num: int) -> str:
-        """Format large numbers with K, M, B suffixes"""
         if num >= 1_000_000_000:
             return f"{num/1_000_000_000:.1f}B"
         elif num >= 1_000_000:
@@ -107,7 +104,6 @@ class HermesMonitor:
         self._load_saved_results()
 
     def _create_session(self) -> requests.Session:
-        """Create and configure requests session"""
         session = requests.Session()
         session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -119,7 +115,6 @@ class HermesMonitor:
         return session
 
     def _load_user_agents(self) -> List[str]:
-        """Load a list of user agents to rotate through"""
         return [
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15',
@@ -129,13 +124,11 @@ class HermesMonitor:
         ]
 
     def _rotate_user_agent(self) -> None:
-        """Rotate user agent to avoid detection"""
         self.session.headers.update({
             'User-Agent': random.choice(self.user_agents)
         })
 
     def _rotate_proxy(self) -> None:
-        """Rotate proxy if available"""
         if not self.proxies:
             return
 
@@ -145,7 +138,6 @@ class HermesMonitor:
         self.log(f"Rotated to proxy: {proxy}", level="debug")
 
     def load_proxies_from_file(self, filename: str) -> None:
-        """Load proxies from a file"""
         try:
             with open(filename, 'r') as f:
                 lines = f.readlines()
@@ -169,7 +161,6 @@ class HermesMonitor:
             self.log(f"Failed to load proxies: {str(e)}", level="error")
 
     def _load_saved_results(self) -> None:
-        """Load previously found usernames"""
         try:
             if os.path.exists(self.save_file):
                 with open(self.save_file, 'r') as f:
@@ -197,7 +188,6 @@ class HermesMonitor:
             self.log(f"Failed to load saved results: {str(e)}", level="error")
 
     def _save_results(self) -> None:
-        """Save found usernames to file"""
         try:
             users_data = []
             for user in self.found_users:
@@ -225,7 +215,6 @@ class HermesMonitor:
             self.log(f"Failed to save results: {str(e)}", level="error")
 
     def log(self, message: str, level: str = "info") -> None:
-        """Add a log message to the queue"""
         time_str = datetime.now().strftime("%H:%M:%S")
 
         color_map = {
@@ -241,14 +230,12 @@ class HermesMonitor:
         self.log_queue.put(formatted)
 
     def is_target_username(self, username: str) -> bool:
-        """Check if the username matches our target criteria"""
         if username.startswith('@'):
             username = username[1:]
 
         return len(username) == self.target_length and username.isalnum()
 
     def make_request(self, url: str, params: Dict = None) -> Dict:
-        """Make a request with error handling and rate limit detection"""
         self.stats["requests"] += 1
 
         try:
@@ -289,7 +276,6 @@ class HermesMonitor:
             return {}
 
     def get_trending_posts(self) -> List[Dict]:
-        """Fetch trending posts from TikTok"""
         url = "https://www.tiktok.com/api/recommend/item_list/"
         params = {
             "aid": "1988",
@@ -302,7 +288,6 @@ class HermesMonitor:
         return data.get('itemList', [])
 
     def search_by_keyword(self, keyword: str) -> List[Dict]:
-        """Search TikTok users by keyword"""
         url = "https://www.tiktok.com/api/search/user/full/"
         params = {
             "aid": "1988",
@@ -315,7 +300,6 @@ class HermesMonitor:
         return data.get('userList', [])
 
     def search_by_suggested(self) -> List[Dict]:
-        """Get suggested users"""
         url = "https://www.tiktok.com/api/recommend/user/list/"
         params = {
             "aid": "1988",
@@ -327,7 +311,6 @@ class HermesMonitor:
         return data.get('userList', [])
 
     def check_trending_posts(self) -> List[UserAccount]:
-        """Check trending posts for target usernames"""
         found_users = []
         posts = self.get_trending_posts()
 
@@ -357,7 +340,6 @@ class HermesMonitor:
         return found_users
 
     def check_search_results(self, keyword: str) -> List[UserAccount]:
-        """Check search results for target usernames"""
         found_users = []
         users = self.search_by_keyword(keyword)
 
@@ -386,7 +368,7 @@ class HermesMonitor:
         return found_users
 
     def check_suggested_users(self) -> List[UserAccount]:
-        """Check suggested users for target usernames"""
+
         found_users = []
         users = self.search_by_suggested()
 
@@ -414,7 +396,6 @@ class HermesMonitor:
         return found_users
 
     def monitor_trending(self, interval: int = 60) -> None:
-        """Monitor trending posts continuously"""
         self.running = True
         self.stats["start_time"] = datetime.now()
 
@@ -452,7 +433,6 @@ class HermesMonitor:
             self.running = False
 
     def monitor_with_keywords(self, keywords: List[str], interval: int = 60) -> None:
-        """Monitor using keyword searches"""
         self.running = True
         self.stats["start_time"] = datetime.now()
 
@@ -495,11 +475,9 @@ class HermesMonitor:
             self.running = False
 
     def display_logo(self) -> None:
-        """Display the Hermes logo"""
         print(HERMES_LOGO)
 
     def display_menu(self) -> None:
-        """Display the main menu"""
         os.system('cls' if os.name == 'nt' else 'clear')
         self.display_logo()
 
@@ -524,7 +502,6 @@ class HermesMonitor:
         print("\n" + Fore.CYAN + "=" * 50 + Style.RESET_ALL)
 
     def logger_thread(self) -> None:
-        """Thread function to print log messages"""
         while self.running or not self.log_queue.empty():
             try:
 
@@ -540,7 +517,6 @@ class HermesMonitor:
                 print(f"Logger error: {str(e)}")
 
     def view_found_usernames(self) -> None:
-        """Display all found usernames"""
         os.system('cls' if os.name == 'nt' else 'clear')
         self.display_logo()
 
@@ -562,7 +538,6 @@ class HermesMonitor:
         input(f"\n{Fore.YELLOW}Press Enter to return to the main menu...{Style.RESET_ALL}")
 
     def change_target_length(self) -> None:
-        """Change the target username length"""
         os.system('cls' if os.name == 'nt' else 'clear')
         self.display_logo()
 
@@ -588,7 +563,6 @@ class HermesMonitor:
         input(f"\n{Fore.YELLOW}Press Enter to return to the main menu...{Style.RESET_ALL}")
 
     def load_proxies(self) -> None:
-        """Load proxies from a file"""
         os.system('cls' if os.name == 'nt' else 'clear')
         self.display_logo()
 
@@ -612,7 +586,6 @@ class HermesMonitor:
         input(f"\n{Fore.YELLOW}Press Enter to return to the main menu...{Style.RESET_ALL}")
 
     def display_settings(self) -> None:
-        """Display and modify settings"""
         while True:
             os.system('cls' if os.name == 'nt' else 'clear')
             self.display_logo()
@@ -651,7 +624,6 @@ class HermesMonitor:
                 break
 
     def export_usernames(self) -> None:
-        """Export found usernames to a text file"""
         try:
             export_file = f"hermes_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
 
@@ -675,7 +647,6 @@ class HermesMonitor:
         input(f"\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
 
     def start(self) -> None:
-        """Main function to start the monitor"""
         os.system('cls' if os.name == 'nt' else 'clear')
         self.display_logo()
 
